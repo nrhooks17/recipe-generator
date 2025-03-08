@@ -23,7 +23,7 @@ func NewRouter(cfg *config.Config, db *pgxpool.Pool) *Router {
 	// add userHandler and authHandler here. Probably going to use custom uuid string first for authentication though.
 
 	// routes for application public routes can go here
-	router.Handle("/health-check", router.handleHealthCheck())
+	router.Handle("/health", router.handleHealthCheck())
 
 	// protected routes can go here.
 	// r.Handle("/api/v1/user/profile", r.auth.Authenticate(userHandler.ProfileHandler()))
