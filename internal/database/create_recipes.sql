@@ -1,6 +1,6 @@
 CREATE TABLE recipes (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) UNIQUE NOT NULL,
+    recipe_name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT NULL,
     prep_time_minutes INT NULL,
     cook_time_minutes INT NULL,
