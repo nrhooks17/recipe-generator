@@ -1,1 +1,4 @@
 .env
+recipe_generator
+.idea/*
+.idea

@@ -1,12 +1,13 @@
 package config
 
 import (
+	"errors"
 	"time"
 
 	"github.com/spf13/viper"
 )
 
-// configuration struct for loading application configuration.
+// Config configuration struct for loading application configuration.
 type Config struct {
 	Port            string
 	DatabaseURL     string
@@ -18,13 +19,14 @@ type Config struct {
 	KeyFile         string
 }
 
-// Loads the configuration from a .env file in the root directory.
+// Load Loads the configuration from a .env file in the root directory.
 func Load() (*Config, error) {
 	viper.SetConfigFile(".env")
 
 	// actual reading takes place here. it's saved in viper.
 	if err := viper.ReadInConfig(); err != nil {
-		if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+		var configFileNotFoundError viper.ConfigFileNotFoundError
+		if !errors.As(err, &configFileNotFoundError) {
 			return nil, err
 		}
 	}

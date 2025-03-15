@@ -1,40 +1,41 @@
 package router
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"recipe-generator/internal/api/config"
+	"recipe-generator/internal/api/handlers"
 )
 
-// will need to add middleware later. Not now though.
+// Router will need to add middleware later. Not now though.
 type Router struct {
-	*http.ServeMux
+	ServeMux *http.ServeMux
 }
 
 func NewRouter(cfg *config.Config, db *pgxpool.Pool) *Router {
-	router := &Router{
-		ServeMux: http.NewServeMux(),
-		// add middleware here
-	}
 
-	// add userHandler and authHandler here. Probably going to use custom uuid string first for authentication though.
+	router := &Router{}
+
+	// init handlers here
+	recipeHandler := handlers.NewRecipeHandler(db, cfg)
+	healthHandler := handlers.HealthHandler{}
+
+	mux := http.NewServeMux()
 
 	// routes for application public routes can go here
-	router.Handle("/health", router.handleHealthCheck())
+	mux.Handle("/health", healthHandler.HealthCheck())
+
+	mux.Handle("/", healthHandler.HealthCheck())
+
+	mux.Handle("/recipe/random", recipeHandler.GetRandom())
+	mux.Handle("/recipe/submit", recipeHandler.Post())
+	mux.Handle("/recipe", recipeHandler.Get())
 
 	// protected routes can go here.
 	// r.Handle("/api/v1/user/profile", r.auth.Authenticate(userHandler.ProfileHandler()))
+	router.ServeMux = mux
 
 	return router
-}
-
-func (r *Router) handleHealthCheck() http.HandlerFunc {
-	// return an anonymous function that returns a json with the status of my app
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
-	}
 }
