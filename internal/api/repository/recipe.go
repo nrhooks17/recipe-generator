@@ -1,3 +1,4 @@
+// Package repository provides data access objects for interacting with the database.
 package repository
 
 import (
@@ -7,20 +8,25 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"recipe-generator/internal/api/models"
+	"recipe-generator/internal/api/model"
 )
 
+// RecipeRepository handles database operations related to recipes.
+// It provides methods to create, read, update, and delete recipe records.
 type RecipeRepository struct {
-	ConnectionPool *pgxpool.Pool
+	ConnectionPool *pgxpool.Pool // Database connection pool
 }
 
-// Constructor for the RecipeRepository
+// NewRecipeRepository creates a new instance of RecipeRepository.
+// It requires a database connection pool to perform database operations.
 func NewRecipeRepository(pool *pgxpool.Pool) *RecipeRepository {
 	return &RecipeRepository{ConnectionPool: pool}
 }
 
-// Insert a new recipe into the database
-func (r *RecipeRepository) Insert(ctx context.Context, model *models.Recipe, tx pgx.Tx) (*models.Recipe, error) {
+// Insert adds a new recipe to the database within a transaction.
+// It requires a context, the recipe model, and an active transaction.
+// Returns the inserted recipe with its ID populated, or an error if the insertion fails.
+func (r *RecipeRepository) Insert(ctx context.Context, model *model.Recipe, tx pgx.Tx) (*model.Recipe, error) {
 	log.Printf("Starting database insertion for recipe: %s", model.RecipeName)
 
 	query := `

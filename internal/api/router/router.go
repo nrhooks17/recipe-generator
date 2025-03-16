@@ -1,3 +1,5 @@
+// Package router provides HTTP routing functionality for the recipe generator application.
+// It defines routes and connects them to the appropriate handlers.
 package router
 
 import (
@@ -6,21 +8,29 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"recipe-generator/internal/api/config"
-	"recipe-generator/internal/api/handlers"
+	"recipe-generator/internal/api/handler"
 )
 
-// Router will need to add middleware later. Not now though.
+// Router manages HTTP request routing for the application.
+// It encapsulates an http.ServeMux and will support middleware in the future.
 type Router struct {
-	ServeMux *http.ServeMux
+	ServeMux *http.ServeMux // The HTTP request multiplexer
 }
 
+// NewRouter creates and configures a new Router instance.
+// It initializes all handlers, sets up routes, and returns the configured router.
+// Parameters:
+//   - cfg: Application configuration
+//   - db: Database connection pool
+//
+// Returns a fully configured Router ready to handle HTTP requests.
 func NewRouter(cfg *config.Config, db *pgxpool.Pool) *Router {
 
 	router := &Router{}
 
 	// init handlers here
-	recipeHandler := handlers.NewRecipeHandler(db, cfg)
-	healthHandler := handlers.HealthHandler{}
+	recipeHandler := handler.NewRecipeHandler(db, cfg)
+	healthHandler := handler.HealthHandler{}
 
 	mux := http.NewServeMux()
 

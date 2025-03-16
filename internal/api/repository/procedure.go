@@ -1,3 +1,4 @@
+// Package repository provides data access objects for interacting with the database.
 package repository
 
 import (
@@ -9,16 +10,21 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// ProcedureRepository handles database operations related to recipe procedure steps.
+// It provides methods to create, read, update, and delete procedure step records.
 type ProcedureRepository struct {
-	db *pgxpool.Pool
+	db *pgxpool.Pool // Database connection pool
 }
 
-// Constructor for the ProcedureRepository
+// NewProcedureRepository creates a new instance of ProcedureRepository.
+// It requires a database connection pool to perform database operations.
 func NewProcedureRepository(db *pgxpool.Pool) *ProcedureRepository {
 	return &ProcedureRepository{db: db}
 }
 
-// Insert method for submitting a step in a procedure. Uses a transaction to insert the step instead of a pool.
+// Insert adds a new procedure step to the database within a transaction.
+// It requires a context, the procedure step text, the associated recipe ID, and an active transaction.
+// Returns an error if the insertion fails.
 func (r *ProcedureRepository) Insert(ctx context.Context, procedureStep string, recipeID int, tx pgx.Tx) error {
 	log.Printf("Inserting procedure step: %v", procedureStep)
 

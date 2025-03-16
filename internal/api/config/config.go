@@ -1,3 +1,4 @@
+// Package config provides configuration management for the recipe generator application.
 package config
 
 import (
@@ -8,18 +9,22 @@ import (
 )
 
 // Config configuration struct for loading application configuration.
+// It holds all the necessary configuration parameters for the application,
+// including server settings and database connection parameters.
 type Config struct {
-	Port            string
-	DatabaseURL     string
-	MaxConns        int32
-	MaxConnLifetime time.Duration
-	MaxConnIdleTime time.Duration
-	Environment     string
-	CertFile        string
-	KeyFile         string
+	Port            string        // HTTP server port
+	DatabaseURL     string        // Connection string for the database
+	MaxConns        int32         // Maximum number of database connections
+	MaxConnLifetime time.Duration // Maximum lifetime of a database connection
+	MaxConnIdleTime time.Duration // Maximum idle time for a database connection
+	Environment     string        // Application environment (development, production, etc.)
+	CertFile        string        // Path to SSL certificate file
+	KeyFile         string        // Path to SSL key file
 }
 
-// Load Loads the configuration from a .env file in the root directory.
+// Load loads the configuration from a .env file in the root directory.
+// It uses viper to read environment variables and configuration files,
+// returning a populated Config struct or an error if loading fails.
 func Load() (*Config, error) {
 	viper.SetConfigFile(".env")
 
