@@ -1,4 +1,4 @@
-CREATE TABLE recipes (
+REATE TABLE recipes (
     id SERIAL PRIMARY KEY,
     recipe_name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT NULL,
