@@ -13,19 +13,20 @@ import (
 // ProcedureRepository handles database operations related to recipe procedure steps.
 // It provides methods to create, read, update, and delete procedure step records.
 type ProcedureRepository struct {
-	db *pgxpool.Pool // Database connection pool
+	ConnectionPool *pgxpool.Pool // Database connection pool
 }
 
 // NewProcedureRepository creates a new instance of ProcedureRepository.
 // It requires a database connection pool to perform database operations.
-func NewProcedureRepository(db *pgxpool.Pool) *ProcedureRepository {
-	return &ProcedureRepository{db: db}
+func NewProcedureRepository(pool *pgxpool.Pool) *ProcedureRepository {
+	return &ProcedureRepository{ConnectionPool: pool}
 }
 
 // Insert adds a new procedure step to the database within a transaction.
 // It requires a context, the procedure step text, the associated recipe ID, and an active transaction.
 // Returns an error if the insertion fails.
-func (r *ProcedureRepository) Insert(ctx context.Context, procedureStep string, recipeID int, tx pgx.Tx) error {
+func (pr *ProcedureRepository) Insert(ctx context.Context, procedureStep string, recipeID int, tx pgx.Tx) error {
+	log.Printf("Inside of ProcedureRepository.Insert")
 	log.Printf("Inserting procedure step: %v", procedureStep)
 
 	query := `
@@ -44,3 +45,61 @@ func (r *ProcedureRepository) Insert(ctx context.Context, procedureStep string, 
 	log.Printf("Successfully inserted procedure step: %v", procedureStep)
 	return nil
 }
+
+// GetProcedureByRecipeId retrieves all procedure steps for a recipe from the database.
+// It requires a context and the ID of the recipe to retrieve.
+// Returns a slice of procedure steps and an error if the retrieval fails.
+func (pr * ProcedureRepository) GetProcedureByRecipeId(ctx context.Context, recipeID int) ([]string, error) {
+	log.Println("Inside of GetProcedureByRecipeID")
+	log.Printf("Retrieving procedure steps for recipe with ID: %v", recipeID)
+
+	connection , err := pr.ConnectionPool.Acquire(ctx)
+
+	if err != nil {
+		log.Printf("Error getting a connection from the connection pool: %v\n", err)
+		return nil, err
+	}
+
+	defer connection.Release()
+
+	query := `SELECT step FROM procedure_steps WHERE recipe_id = $1`
+
+	result, err := connection.Query(ctx, query, recipeID)
+
+	if err != nil {
+		log.Printf("Something went wrong with the following query: %v\n", query)
+		return nil, err
+	}
+
+	var procedureSteps []string
+
+	for result.Next() {
+		
+		var procedureStep string
+
+		err := result.Scan(&procedureStep)
+
+		if err != nil {
+			log.Printf("Error scanning procedure step: %v\n", err)
+			return nil, err
+		}
+		
+		procedureSteps = append(procedureSteps, procedureStep)
+	}
+
+	if result.Err() != nil {
+		log.Printf("Error retrieving procedure steps: %v\n", result.Err())
+		return nil, err
+	}
+
+	return procedureSteps, nil
+}
+
+// TODO - implement
+func(pr *ProcedureRepository) Get(ctx context.Context, recipeID int) ([]string, error) {
+	log.Printf("Retrieving procedure steps for recipe with ID: %v", recipeID)
+	
+	return nil, nil
+}
+
+

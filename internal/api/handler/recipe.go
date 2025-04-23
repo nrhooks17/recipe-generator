@@ -24,15 +24,15 @@ import (
 // and their associated ingredients and procedures.
 type RecipeHandler struct {
 	// ConnectionPool is the PostgreSQL connection pool
-	ConnectionPool        *pgxpool.Pool
+	ConnectionPool *pgxpool.Pool
 	// RecipeRepository handles database operations for recipes
-	RecipeRepository      *repository.RecipeRepository
+	RecipeRepository *repository.RecipeRepository
 	// IngredientsRepository handles database operations for ingredients
 	IngredientsRepository *repository.IngredientsRepository
 	// ProcedureRepository handles database operations for procedures
-	ProcedureRepository   *repository.ProcedureRepository
+	ProcedureRepository *repository.ProcedureRepository
 	// Config contains application configuration
-	Config                *config.Config
+	Config *config.Config
 }
 
 // NewRecipeHandler creates a new RecipeHandler instance with the provided database connection pool and configuration.
@@ -62,6 +62,8 @@ func NewRecipeHandler(pool *pgxpool.Pool, config *config.Config) *RecipeHandler 
 //   - http.HandlerFunc: A handler function that processes recipe creation requests
 func (rh *RecipeHandler) Post() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		
+		// check if the method is a post. If not return method isn't allowed.
 		if r.Method != http.MethodPost {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -73,6 +75,7 @@ func (rh *RecipeHandler) Post() http.HandlerFunc {
 
 		log.Printf("Received new recipe submission request")
 
+	
 		recipe, err := rh.decodeRecipe(r)
 		if err != nil {
 			log.Printf("Error decoding request body: %v", err)
@@ -107,6 +110,7 @@ func (rh *RecipeHandler) Post() http.HandlerFunc {
 			rh.handleRecipeSubmissionError(w, err)
 			return
 		}
+
 		defer tx.Rollback(r.Context()) // Rollback if we don't commit
 
 		// Insert the recipe into the database using the transaction
@@ -137,7 +141,11 @@ func (rh *RecipeHandler) Post() http.HandlerFunc {
 		}
 
 		log.Printf("Successfully inserted recipe: %s with ID: %d", recipe.RecipeName, recipe.ID)
-		json.NewEncoder(w).Encode(recipe)
+		err = json.NewEncoder(w).Encode(recipe)
+
+		if err != nil {
+
+		}
 	}
 }
 
@@ -163,13 +171,81 @@ func (rh *RecipeHandler) Get() http.HandlerFunc {
 // Returns:
 //   - http.HandlerFunc: A handler function that processes random recipe retrieval requests
 func (rh *RecipeHandler) GetRandom() http.HandlerFunc {
+	log.Println("inside GetRandom function of RecipeHandler")
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
+		if r.Method == http.MethodGet {
+			// get a random recipe id from the database
 			
-		}
-		err := json.NewEncoder(w).Encode(map[string]string{"randomRecipe": "randomRecipe returned"})
-		if err != nil {
-			return
+			recipeID, err := rh.RecipeRepository.GetRandomRecipeId(r.Context())
+
+			if err != nil {
+				log.Printf("Error getting random recipe ID: %v", err)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"err": err.Error(),
+				})
+			}
+
+			recipe, err := rh.RecipeRepository.Get(r.Context(), recipeID)
+
+			if err != nil {
+				log.Printf("Error retrieving recipe from database: %v", err)
+				w.Header().Set("Content-Type", "application-json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"err": err.Error(),
+				})
+			}
+
+			// get ingredients and procedure steps next
+
+			ingredients, err := rh.IngredientsRepository.GetIngredientsByRecipeId(r.Context(), recipeID)
+
+			if err != nil {
+				log.Printf("Error retrieving ingredients from database: %v", err)
+				w.Header().Set("Content-Type", "application-json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"err": err.Error(),
+				})
+			}
+
+			procedureSteps, err := rh.ProcedureRepository.GetProcedureByRecipeId(r.Context(), recipeID)
+
+			if err != nil {
+				log.Printf("Error retrieving procedure steps from database: %v", err)
+				w.Header().Set("Content-Type", "application-json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"err": err.Error(),
+				})
+			}
+
+			recipe.Ingredients = ingredients
+			recipe.Procedure = procedureSteps
+			
+			// encode the recipe to be sent back in response.
+			err = json.NewEncoder(w).Encode(recipe)
+
+			if err != nil {
+				log.Printf("Error decoding recipe retrieved from database: %v", err)
+				w.Header().Set("Content-Type", "application-json")
+				w.WriteHeader(http.StatusInternalServerError)
+				json.NewEncoder(w).Encode(map[string]string{
+					"err": err.Error(),
+				})
+
+			}
+
+		} else {
+			//if it's not a GET request return method not allowed. 
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusMethodNotAllowed)			// method not allowed
+			json.NewEncoder(w).Encode(map[string]string{
+				"error": "Method not allowed",
+			})
 		}
 	}
 }
@@ -389,3 +465,4 @@ func (rh *RecipeHandler) handleProcedureSubmissionError(w http.ResponseWriter, e
 
 	json.NewEncoder(w).Encode(response)
 }
+

@@ -9,12 +9,13 @@ import (
 
 	"recipe-generator/internal/api/config"
 	"recipe-generator/internal/api/handler"
+	"recipe-generator/internal/api/middleware"
 )
 
 // Router manages HTTP request routing for the application.
 // It encapsulates an http.ServeMux and will support middleware in the future.
 type Router struct {
-	ServeMux *http.ServeMux // The HTTP request multiplexer
+	ServeMux http.Handler // The HTTP request multiplexer
 }
 
 // NewRouter creates and configures a new Router instance.
@@ -45,7 +46,9 @@ func NewRouter(cfg *config.Config, db *pgxpool.Pool) *Router {
 
 	// protected routes can go here.
 	// r.Handle("/api/v1/user/profile", r.auth.Authenticate(userHandler.ProfileHandler()))
-	router.ServeMux = mux
+
+	
+	router.ServeMux = middleware.CORS(mux) 
 
 	return router
 }
