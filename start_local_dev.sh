@@ -1,14 +1,6 @@
 #!/bin/bash
 
-startDockerCommand="sudo systemctl start docker."
-echo "Starting docker process by executing '${startDockerCommand}'"
-
-sudo systemctl start docker
-
-startPostgresCommand="docker container start postgres-db."
-echo "Starting postgres container with command '${startPostgresCommand}'"
-
-docker container start postgres-db
+./start_local_database.sh
 
 sleep 2 # mainly to allow postgres to start
 

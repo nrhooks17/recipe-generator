@@ -2,3 +2,5 @@
 recipe_generator
 .idea/*
 .idea
+bulk_insert_recipe
+

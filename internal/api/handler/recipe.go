@@ -17,6 +17,7 @@ import (
 	"recipe-generator/internal/api/config"
 	"recipe-generator/internal/api/model"
 	"recipe-generator/internal/api/repository"
+	"recipe-generator/internal/api/service"
 )
 
 // RecipeHandler manages HTTP requests related to recipes.
@@ -25,6 +26,8 @@ import (
 type RecipeHandler struct {
 	// ConnectionPool is the PostgreSQL connection pool
 	ConnectionPool *pgxpool.Pool
+	//RecipeService handles business logic.
+	RecipeService *service.RecipeService
 	// RecipeRepository handles database operations for recipes
 	RecipeRepository *repository.RecipeRepository
 	// IngredientsRepository handles database operations for ingredients
@@ -45,14 +48,17 @@ type RecipeHandler struct {
 // Returns:
 //   - *RecipeHandler: A new recipe handler instance
 func NewRecipeHandler(pool *pgxpool.Pool, config *config.Config) *RecipeHandler {
+	
 	return &RecipeHandler{
 		ConnectionPool:        pool,
+		RecipeService:		   service.NewRecipeService(),
 		RecipeRepository:      repository.NewRecipeRepository(pool),
 		IngredientsRepository: repository.NewIngredientsRepository(pool),
 		ProcedureRepository:   repository.NewProcedureRepository(pool),
 		Config:                config,
 	}
 }
+
 
 // Post returns an HTTP handler function that processes POST requests for creating new recipes.
 // The handler validates the recipe data, creates a database transaction, and inserts the recipe,
@@ -75,7 +81,7 @@ func (rh *RecipeHandler) Post() http.HandlerFunc {
 
 		log.Printf("Received new recipe submission request")
 
-	
+		// decode recipe and ingredients
 		recipe, err := rh.decodeRecipe(r)
 		if err != nil {
 			log.Printf("Error decoding request body: %v", err)
@@ -143,8 +149,26 @@ func (rh *RecipeHandler) Post() http.HandlerFunc {
 		log.Printf("Successfully inserted recipe: %s with ID: %d", recipe.RecipeName, recipe.ID)
 		err = json.NewEncoder(w).Encode(recipe)
 
+		// these error functions need to go in their own struct
 		if err != nil {
+			log.Printf("Error encoding recipe after submission: %s\n", err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusInternalServerError)
 
+			var response map[string]string
+			environment := strings.ToLower(rh.Config.Environment)
+
+			if environment == "development" {
+				response = map[string]string{
+					"error":   "Error decoding json after submitting string",
+					"details": err.Error(),
+				}
+			} else {
+				response = map[string]string{
+					"error": "Internal server error",
+				}
+			}
+			json.NewEncoder(w).Encode(response)
 		}
 	}
 }
@@ -175,8 +199,8 @@ func (rh *RecipeHandler) GetRandom() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
+
 			// get a random recipe id from the database
-			
 			recipeID, err := rh.RecipeRepository.GetRandomRecipeId(r.Context())
 
 			if err != nil {
@@ -200,7 +224,6 @@ func (rh *RecipeHandler) GetRandom() http.HandlerFunc {
 			}
 
 			// get ingredients and procedure steps next
-
 			ingredients, err := rh.IngredientsRepository.GetIngredientsByRecipeId(r.Context(), recipeID)
 
 			if err != nil {

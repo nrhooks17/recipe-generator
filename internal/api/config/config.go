@@ -20,9 +20,14 @@ type Config struct {
 	Environment     string        // Application environment (development, production, etc.)
 	CertFile        string        // Path to SSL certificate file
 	KeyFile         string        // Path to SSL key file
+
+	// anthropic api/image location constants
+	AnthropicApiUrl         string
+	RecipeImagesLocation string
+	AnthropicApiKey		 string	
 }
 
-// Load loads the configuration from a .env file in the root directory.
+// Load the configuration from a .env file in the root directory.
 // It uses viper to read environment variables and configuration files,
 // returning a populated Config struct or an error if loading fails.
 func Load() (*Config, error) {
@@ -47,5 +52,10 @@ func Load() (*Config, error) {
 		Environment:     viper.GetString("ENVIRONMENT"),
 		CertFile:        viper.GetString("CERT_FILE"),
 		KeyFile:         viper.GetString("KEY_FILE"),
+
+		// anthropic api/image location constants
+		AnthropicApiUrl:         viper.GetString("ANTHROPIC_API_URL"),
+		AnthropicApiKey:      viper.GetString("ANTHROPIC_API_KEY"),
+		RecipeImagesLocation: viper.GetString("RECIPE_IMAGES_LOCATION"),
 	}, nil
 }

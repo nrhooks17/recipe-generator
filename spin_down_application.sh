@@ -1,6 +1,5 @@
 #!/bin/bash
 
-
 echo "Stopping recipe generator backend server..."
 
 ps -aux | grep recipe_generator | grep -v grep | awk '{print $2}' | xargs kill -9
